@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>15pazzle</title>
+        <link href="style.css" rel="stylesheet">
+        <style>
+            td{
+                width:30px;
+                height:30px;
+                text-align: center;
+            }
+            
+
+        </style>
+    </head>
+    
+    <body>
+        <header>
+            <div class="container">
+                <h1>15パズル</h1>
+            </div><!-- /.container -->
+        </header>
+
+        <main>
+            <div>’＿’マスと接する上下左右どれかのマスをクリックするとパズルをスライドできます</div>
+            <div class="container">
+                <section>
+                    <table border="1">
+                        <tr id="1gyoume"><!--1行目-->
+                        </tr>
+                        <tr id="2gyoume"><!--2行目-->
+                        </tr>
+                        <tr id="3gyoume"><!--3行目-->
+                        </tr>
+                        <tr id="4gyoume"><!--4行目-->
+                        </tr>
+                        <tr id="5gyoume"><!--5行目-->
+                        </tr>
+                        <tr id="6gyoume"><!--6行目-->
+                        </tr>
+                    </table>
+                </section>
+            </div><!-- /.container -->
+        </main>
+
+        <footer>
+            <div class="container">
+            </div><!-- /.container -->
+        </footer>
+
+        <script src="js.cookie.js"></script>
+        <script src="jquery-3.4.1.min.js"></script>
+        <script>
+            let number=[];
+            let count=0;
+            let rand1,rand2,tmp;
+            let N=16;//配列の要素数 最大100まで
+            let str;
+            let diff,min,sec;//クリアタイム用
+            let max=0;
+            let correct_count=0;
+            let text_t,text_i;
+            let find_flag=1;
+            let el_num=0,gyo=0;
+            let total_size;
+
+            //配列生成処理する関数
+            function set_num(){
+                let i,j;
+                //N個の配列に1~Nを格納
+                for(i=0;i<N-1;i++){
+                    number[i]=i+1;
+                }
+                number[15]='__'
+                //配列内をぐちゃぐちゃにかき混ぜる
+                for(i=0;i<N*4;i++){
+                //スワップ対象をランダムに2つ選択
+                rand1=Math.floor(Math.random()*N);
+                rand2=Math.floor(Math.random()*N);
+                
+                //スワップの実行
+                tmp=number[rand1];
+                number[rand1]=number[rand2];
+                number[rand2]=tmp;
+                
+            }
+            }
+           
+            //N+1個の要素を配置する関数 1は空要素
+            function create_element(){
+                let i,j;
+                let count=0;
+                $('#stage').text(`  STAGE${Math.floor(Math.sqrt(N)-1)}`);
+                $("table").animate(
+                    {"left":"0px"},
+                );
+                total_size=(Math.sqrt(N)+2)*(Math.sqrt(N)+2);
+                el_num=0;
+                create_tag();
+            }
+
+            function create_tag(){
+                
+                gyou=Math.floor(el_num/Math.sqrt(total_size))+1;//要素番号から何行目に配置されるかを計算
+                
+                //クリック可能な中央の16マスのタグを生成し，click時のアクションを設定
+                if( 7<=el_num && el_num<=28 && el_num%6!=0 && el_num%6!=5 ){
+                    str=`<td id="td${el_num}" ><span id="${el_num}">${String(number[count]).padStart(2,'0')}</span></td>`;//number[0]~number[15]の中身を順にspan内に埋め込み
+                    if(count===15){
+                       // str=`<td id="td${el_num}" ><span id="${el_num}">■</span></td>`;
+                    }
+                    document.getElementById(`${gyou}gyoume`).insertAdjacentHTML('beforeend',str);
+                    document.getElementById(`${el_num}`).onclick =clk_act
+                    $(`#${el_num}`).css("background-color","yellow")
+                    count++
+                }
+                //中央の16マスの周りのダミーマス(クリック不可)を生成
+                else{
+                    str=`<td id="td${el_num}" ><div id="${el_num}">✖</div></td>`;
+                    document.getElementById(`${gyou}gyoume`).insertAdjacentHTML('beforeend',str);
+                    $(`#${el_num}`).hide();
+                }
+                el_num++;
+                if(el_num<total_size){
+                    setTimeout(create_tag,100);//アニメーション風に表示
+                }
+            }
+
+            function clk_act(){
+                    text_t=this.textContent;//クリックしたとこの値を一時保存  
+                    let clk_num=parseInt($(this).attr("id"));
+                    
+                    console.log(`id:${clk_num+6}`);//クリック箇所のtag id名を取得→何行何列目か求められる
+                    console.log(document.getElementById(`${clk_num+6}`).textContent)
+                    //クリックしたとこの上下左右(id　-6/+6/-1/+1)のところが■なら入れ替え実施
+                    if( document.getElementById(`${clk_num+6}`).textContent==='__'||
+                        document.getElementById(`${clk_num-6}`).textContent==='__'||
+                        document.getElementById(`${clk_num+1}`).textContent==='__'||
+                        document.getElementById(`${clk_num-1}`).textContent==='__'){
+                        
+                        $.when(
+                            search()
+                        )
+                        .done(
+                            this.textContent='__'   //クリックしたとこの値を0にする　(毎回実行される)
+                        )
+                        console.log('this='+text_t);
+                        //console.log('item='+text_i);
+                    }
+                    else{
+                        console.log('移動不可')
+                    }
+
+            }
+
+  
+            function search(){
+                document.querySelectorAll('span').forEach(function(item,index){
+                        //console.log("searching")
+                        //console.log(item.textContent+'+'+find_flag)
+                        if(item.textContent=='__' && find_flag==1) {//中身が□の所があったら実行
+                            //text_i=item.textContent;//item内のtextを仮保存
+                            item.textContent=text_t;//□の場所にクリックした個所の数字を移す
+                            find_flag=0;
+                            console.log('find');
+                        }
+                })
+                if(find_flag!=0){
+                    console.log('error');
+                }
+                find_flag=1;
+            }
+
+            jQuery(function(){
+                set_num();
+                create_element();
+            })
+
+        </script>
+
+    </body>
+</html>

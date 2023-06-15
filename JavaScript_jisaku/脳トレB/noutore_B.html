@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link href="style.css" rel="stylesheet">
+        <style>
+            table{
+                left:20000px;
+                position: relative;
+            }
+            td{
+                top:20000px;
+                width: 50px;
+                height: 50px;
+                text-align: center;
+                position: relative;
+                font-size:xx-large;
+            }
+            p{
+                font-size:xx-large;
+            }
+        </style>
+    </head>
+    
+    <body>
+        <header>
+            <div class="container">
+                <h1>脳トレB</h1>
+            </div><!-- /.container -->
+        </header>
+
+        <main>
+            <div>大きい数字から順にクリックしていくゲームです</div>
+            <p>ステージ3クリアで完全クリアです</p>
+            <div class="container">
+                <section>
+                    <h1 id="stage"></h1>
+                    <table border="1">
+                        <tr id="1gyoume"><!--1行目-->
+                        </tr>
+                        <tr id="2gyoume"><!--2行目-->
+                        </tr>
+                        <tr id="3gyoume"><!--3行目-->
+                        </tr>
+                        <tr id="4gyoume"><!--4行目-->
+                        </tr>
+                        <tr id="5gyoume"><!--5行目-->
+                        </tr>
+                        <tr id="6gyoume"><!--1行目-->
+                        </tr>
+                        <tr id="7gyoume"><!--2行目-->
+                        </tr>
+                        <tr id="8gyoume"><!--3行目-->
+                        </tr>
+                        <tr id="9gyoume"><!--4行目-->
+                        </tr>
+                        <tr id="10gyoume"><!--5行目-->
+                        </tr>
+                    </table>
+                    <p id="high-score">ここにハイスコアが出ます</p>
+                    <input type="button" value="ハイスコアリセット" id="score">
+                </section>
+            </div><!-- /.container -->
+        </main>
+
+        <footer>
+            <div class="container">
+                <p>JavaScript Samples</p>
+            </div><!-- /.container -->
+        </footer>
+
+        <script src="js.cookie.js"></script>
+        <script src="jquery-3.4.1.min.js"></script>
+        <script>
+            let number=[];
+            let i,j;
+            let count=0;
+            let rand1,rand2,tmp;
+            let N=4;//配列の要素数 最大100まで
+            let str;
+            let diff,min,sec;//クリアタイム用
+            let max=0;
+            let correct_count=0;
+
+            //配列生成処理する関数
+            function set_num(){
+                //N個の配列に1~Nを格納
+                for(i=0;i<N;i++){
+                    number[i]=i+1;
+                }
+                //配列内をぐちゃぐちゃにかき混ぜる
+                for(i=0;i<N*4;i++){
+                //ソート対象をランダムに2つ選択
+                rand1=Math.floor(Math.random()*N);
+                rand2=Math.floor(Math.random()*N);
+                
+                //ソートの実行
+                tmp=number[rand1];
+                number[rand1]=number[rand2];
+                number[rand2]=tmp;
+            }
+            }
+           
+            //N個の要素を配置する関数
+            function create_element(){
+                $('#stage').text(`  STAGE${Math.floor(Math.sqrt(N)-1)}`);
+                $("table").animate(
+                    {"left":"0px"},
+                );
+                for(i=0;i<N;i++){
+                    j=Math.floor(i/Math.sqrt(N))+1;
+                    str=`<td id="num2${i}" ><span id="num${i}"> ${String(number[i]).padStart(2,'0')}  </span></td>`;
+                    document.getElementById(`${j}gyoume`).insertAdjacentHTML('afterbegin',str);
+                    document.getElementById(`num${i}`).onclick =clk_act;
+                    //$(`#num${i}`).hide(0);
+                    //$(`#num${i}`).fadeIn(2000);
+                }
+                set();
+                //tag_anime();
+            }
+
+            function repeat(){
+                setTimeout(set,50);
+            }
+            function set(){
+                if(count<N){
+                    //ここに実行したい処理
+                    $(`#num2${count}`).animate(
+                        {"top":"0px"},
+                        "slow",
+                        "swing"
+                    );
+                    if(count%2===1 ){//配列番号が奇数の時
+                        if(N%2===0){//要素数が 偶数のときは奇数行か偶数行かで色反転箇所を変える
+                            let sign=Math.floor(count/Math.sqrt(N))%2;//奇数行目:0 / 偶数行目:1
+                            $(`#num2${count-sign}`).css("background-color","#050")
+                            $(`#num2${count-sign}`).css("color","#fff")
+
+                        }else{//要素数が奇数の時は ただただ2個おきに色反転
+                            $(`#num2${count}`).css("background-color","#050")
+                            $(`#num2${count}`).css("color","#fff")
+                        }
+                    }
+
+                    console.log(Math.sqrt(N))
+                    count++;
+                    repeat();
+                }
+                else{
+                    count=0;
+                }        
+            }
+
+            function tag_anime(){
+                $(`#num${count}`).animate(
+                        {"top":"0px"},
+                        "slow",
+                        "swing"
+                );
+                console.log(count);
+                count++;
+                if(count<N){
+                    setTimeout(tag_anime,100);
+                }
+                else{
+                    count=0;
+                }
+            }
+
+            //クリック時の処理を設定する関数
+            function clk_act(){
+                //要素内の最大値取得
+                document.querySelectorAll('span').forEach(function(item,index){
+                        max=Math.max(parseInt(item.textContent),max);
+                });
+
+                /*
+                if(parseInt(this.textContent)===-1){        //クリック箇所が-1の時＝消えているマス
+                }*/
+
+                //正解の時の処理　クリックした要素を消す
+                if(max===parseInt(this.textContent)){  
+                    $.when(
+                        //this.textContent=-1,
+                        //$(this).css('color', '#feb'),
+                        correct_count++,
+                        this.remove(),
+                        max=0,  //max初期化
+                    )
+                    .done(function(){
+                        //クリア時処理 document.querySelectorAll('td').length===0　から変更
+                        if(correct_count===N){  
+                            correct_count=0;                                                //正解数をリセット
+                            
+                            document.querySelectorAll('td').forEach(function(item,index){   //すべてのtd要素remove
+                                item.remove();
+                            });
+
+                            N=(Math.floor(Math.sqrt(N))+1)*(Math.floor(Math.sqrt(N))+1);    //Nを増やして難易度アップ
+                            if(N<16){
+                                set_num();          //配列再設定
+                                create_element();   //要素再生成
+                            }else{
+                                //完全制覇　ランキングtop3なら名前入力してランキング登録できるような処理
+                                setTimeout(stage_clear,10);                                    //10ミリ秒後にアラートを出す　(要素が消える前にアラートが出るのを防ぐためsettimeout使用)
+                            }
+                        }
+                    })
+
+                }   
+                //はずれ時の処理
+                else{ 
+                    correct_count=0;//正解数をリセット
+                    window.alert('GAME OVER');
+                    document.querySelectorAll('td').forEach(function(item,index){//すべてのtd要素remove
+                        item.remove();
+                    });
+                    //リセット処理
+                    start=new Date();   //再スタートできるよう時間をリセット
+                    set_num();          //配列再設定
+                    create_element();   //要素再生成
+                }
+            }
+
+            //ステージクリア時の処理をする関数
+            function stage_clear(){
+                let end=new Date();//終了時間の取得
+                let best_time=Cookies.get('high-score');
+                diff=Math.floor((end.getTime() - start.getTime())/1000);
+                min=Math.floor(diff/60);
+                sec=diff%60;
+                window.alert(`GAME CLEAR  TIME: ${min}分${sec}秒`);
+                
+                if(parseInt(best_time)>=diff || best_time===undefined){//スコア更新時 or クッキー内にスコアデータがない場合
+                    Cookies.set('high-score',String(diff),{expires:7});
+                    document.getElementById('high-score').textContent=`HIGH-SCORE: ${min}分${sec}秒`;
+                }
+                start=new Date();   //再スタートできるよう開始時間をリセット
+            }
+
+            jQuery(function(){
+                //$("td").css("border","3px", "yellow");//適用されない？
+                $("table").css("background-color", "#feb");//最初だけ適用される
+                //$("table").fadeOut(2000);
+                $('#score').on('click',function(){
+                    Cookies.remove("high-score");
+                    document.getElementById('high-score').textContent=`HIGH-SCORE: -分-秒`
+                })
+                
+                //初回読み込み時ののスコア表示
+                if(Cookies.get('high-score')!== undefined){//クッキー内は文字列として保存されるが、データないときのundefinedは「数字」
+                    min=Math.floor(parseInt(Cookies.get('high-score'))/60);
+                    sec=parseInt(Cookies.get('high-score'))%60;
+                    document.getElementById('high-score').textContent=`HIGH-SCORE: ${min}分${sec}秒`;
+                }
+                else{
+                    document.getElementById('high-score').textContent=`HIGH-SCORE: -分-秒`
+                }
+            });  
+        
+            set_num();
+            create_element();
+            let start=new Date();//スタート時間の取得
+
+        </script>
+
+    </body>
+</html>

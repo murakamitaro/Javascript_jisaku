@@ -1,0 +1,313 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <link href="style.css" rel="stylesheet">
+        <style>
+            p{
+                top:20000px;
+                position: absolute;
+                font-size: xx-large;
+                top: 150px;
+            }
+
+            #score_board{
+                position:relative;
+                background-color: cyan;
+                width:300px;
+                height: 180px;
+                left:2000px;
+            }
+            #retry{
+                position:relative;
+                color:red;
+            }
+
+        </style>
+    </head>
+    
+    <body>
+        <header>
+            <div class="container">
+                <h1>脳トレ</h1>
+                <h1 id="time">Time:</h2>
+            </div><!-- /.container -->
+        </header>
+
+        <main>
+            <div>大きい数字から順にクリックしていくゲームです</div>
+            <div class="container">
+                <section>
+                    <div id="score_board">
+                        <ol id="ranking">
+                            <th>ハイスコアランキング  </th>
+                            <li id="No1">-</li>
+                            <li id="No2">-</li>
+                            <li id="No3">-</li>
+                        </ol>
+                        <form id="form">
+                            <input type="text" name="player_name">
+                            <input type="submit" value="送信">
+                        </form>
+                        <div id="retry">RETRY</div>
+                    </div>
+                </section>
+            </div><!-- /.container -->
+        </main>
+
+        <footer>
+            <div class="container">
+            </div><!-- /.container -->
+        </footer>
+
+        <script src="js.cookie.js"></script>
+        <script src="jquery-3.4.1.min.js"></script>
+        <script>
+            let number=[];      //ランダムな数字を格納する配列
+            let N=5;            //配列の要素数 最大100まで
+            let diff,min,sec;   //クリアタイム用
+            let start;          //開始時刻格納用
+            let timer_flag=0;   //タイマーのon/off
+            let correct_count=0;//正解数のカウンター
+            let fontsize=[0,0,0,0,0,0,0,0,0,0];
+            let fontcolor=[];
+            let ranker=[{time:100,name:'のび太'},{time:10,name:'のび男'},{time:15,name:'のび蔵'}];
+            
+
+            //配列生成処理する関数
+            function set_num(){
+                let i;
+                let rand1,rand2,tmp;
+
+                //N個の配列に1~Nを格納
+                for(i=0;i<N;i++){
+                    number[i]=i+1;
+                }
+                //配列内をぐちゃぐちゃにかき混ぜる
+                for(i=0;i<N*4;i++){
+                    //ソート対象をランダムに2つ選択
+                    rand1=Math.floor(Math.random()*N);
+                    rand2=Math.floor(Math.random()*N);
+                    
+                    //ソートの実行
+                    tmp=number[rand1];
+                    number[rand1]=number[rand2];
+                    number[rand2]=tmp;
+                }
+            }
+
+            //N個の要素を配置する関数 クリック時動作、文字色も併せて設定
+            function create_element(){
+                let i,j;
+                let str;
+                $("p").animate(
+                    {"top":"0px"},
+                );
+                for(i=0;i<N;i++){
+                    j=Math.floor(i/Math.sqrt(N))+1;
+                    str=`<p id="num${i}"> ${String(number[i]).padStart(2,'0')}  </p>`;
+                    document.querySelector("section").insertAdjacentHTML('afterbegin',str);
+                    document.getElementById(`num${i}`).onclick =clk_act;
+
+                    $(`#num${i}`).css("color",random_color());//フォントをランダムなカラーに設定
+                    $(`#num${i}`).animate(
+                        {"top" :`${Math.random()*500+100}px`,
+                         "left":`${Math.random()*500+100}px`
+                        },
+                        "slow",
+                        "swing"
+                    );
+
+                }
+            }
+           
+            //クリック時の処理をする関数
+            function clk_act(){
+                let max=0;
+                //要素内の最大値取得
+                document.querySelectorAll('p').forEach(function(item,index){
+                        max=Math.max(parseInt(item.textContent),max);
+                });
+                //正解の時の処理　クリックした要素を消す
+                if(max===parseInt(this.textContent)){  
+                    $.when(
+                        correct_count++,
+                        this.remove(),
+                        max=0,  //max初期化
+                    )
+                    .done(function(){
+                        //クリア時処理 document.querySelectorAll('td').length===0　から変更
+                        if(correct_count===N){  
+                            correct_count=0;                                                //正解数をリセット
+                            setTimeout(stage_clear,500)                                    //一秒後にアラートを出す　(要素が消える前にアラートが出るのを防ぐためsettimeout使用)
+                            document.querySelectorAll('p').forEach(function(item,index){   //すべてのtd要素remove
+                                item.remove();
+                            });
+                            //N=(Math.floor(Math.sqrt(N))+1)*(Math.floor(Math.sqrt(N))+1);    //Nを増やして難易度アップ
+                            //set_num();          //配列再設定
+                            //create_element();   //要素再生成
+                        }
+                    })
+
+                }   
+                //はずれ時の処理
+                else{ 
+                    correct_count=0;//正解数をリセット
+                    window.alert('GAME OVER');
+                    document.querySelectorAll('p').forEach(function(item,index){//すべてのtd要素remove
+                        item.remove();
+                    });
+                    //リセット処理
+                    start=new Date();   //再スタートできるよう時間をリセット
+                    set_num();          //配列再設定
+                    create_element();   //要素再生成
+                }
+            }
+
+            //要素をランダムな位置へアニメーションさせる関数
+            function anime(){
+                    document.querySelectorAll('p').forEach(function(item,index){
+                        $(item).animate(
+                            {"top" :`${Math.random()*500+150}px`,   //y座標設定
+                            "left":`${Math.random()*500+20}px`      //x座標設定
+                            },
+                            2000*Math.random()+1000,                //アニメーション完了までの時間設定                            
+                        );
+                     })
+                    setTimeout(anime,3000);//
+            }
+
+            //ランダムなカラーを作成し　#XXXの形式でreturnする関数
+            function random_color(){
+                let R=String((Math.floor(Math.random()*16)).toString(16));
+                let G=String((Math.floor(Math.random()*16)).toString(16));
+                let B=String((Math.floor(Math.random()*16)).toString(16));
+                return '#'+R+G+B;
+            }
+
+            //フォントサイズをランダムに設定する関数
+            function font_zoom(){
+                document.querySelectorAll('p').forEach(function(item,index){
+                    fontsize[index]=Math.floor(Math.random()*40)+20;
+                    $(item).css("font-size",fontsize[index]);
+                    /*if(fontsize[index]===0){
+                        fontsize[index]=Math.floor(Math.random()*40)+20
+                    }
+                    fontsize[index]=fontsize[index]+Math.floor(Math.random()*2)-2
+                    if(fontsize[index]<15){
+                        fontsize[index]=15;
+                    }
+                    $(item).css("font-size",fontsize[index])
+                    //console.log(fontsize[index])
+                });
+                setTimeout(font_zoom,200);*/
+                })
+            }
+            
+            //ハイスコアランキングに登録できる用設定する関数
+            function score_board_set(){
+                $("#form").submit(function(event){
+                event.preventDefault()
+                let new_name=document.getElementById('form').player_name.value;
+                let new_time=sec;
+                ranker.push({time:new_time,name:new_name})
+                console.log(ranker)
+                high_score();
+                $("#form").hide(20);
+                })
+            }
+
+            //ステージクリア時の処理をする関数
+            function stage_clear(){
+                timer_flag=1;//タイマー停止
+                let end=new Date();//終了時間の取得
+                let best_time=Cookies.get('high-score');
+                diff=Math.floor((end.getTime() - start.getTime())/1000);
+                min=Math.floor(diff/60);
+                sec=diff%60;
+                //window.alert(`GAME CLEAR  TIME:${min}分${sec}秒`);
+                
+                /*if(parseInt(best_time)>=diff || best_time===undefined){//スコア更新時 or クッキー内にスコアデータがない場合
+                    Cookies.set('high-score',String(diff),{expires:7});
+                    document.getElementById('high-score').textContent=`HIGH-SCORE:${min}分${sec}秒`;
+                }*/
+
+                $("#score_board").animate(
+                            {"top" :"0px",        //y座標設定
+                            "left":"100px"      //x座標設定
+                            },
+                            100                //アニメーション完了までの時間設定                            
+                );
+
+                start=new Date();   //再スタートできるよう開始時間をリセット
+            }
+
+            //経過時間を計算し表示させる関数
+            function timer(){
+                let now=new Date();
+                let time=now-start;
+                let sec=time/1000;
+                if(timer_flag!==1){
+                    document.getElementById('time').textContent=`Time:${sec}秒`;
+                    setTimeout(timer,10);
+                }
+            }
+
+            //ハイスコアの更新と表示？
+            function high_score(){
+                //////////////////////////////以下追加予定のハイスコアランキング機能
+
+                //ハイスコアランキング用
+                let temp=[];
+                let i=0;
+                let j=0;
+
+                for(i=0; i<ranker.length; i++){
+                    for(j=0; j<ranker.length-i-1; j++){
+                        if(ranker[j].time > ranker[j+1].time){//配列番号の大きい方にはtimeが大きい＝遅い人のデータが来るように入れ替え
+                            temp=ranker[j+1];
+                            ranker[j+1]=ranker[j];
+                            ranker[j]=temp;
+                        }
+                    }
+                }
+                $("#No1").text(ranker[0].name +':'+ ranker[0].time+'秒');
+                $("#No2").text(ranker[1].name +':'+ ranker[1].time+'秒');
+                $("#No3").text(ranker[2].name +':'+ ranker[2].time+'秒');
+            }
+
+            jQuery(function(){
+                set_num();          //配列生成
+                create_element();   //要素を生成、セット
+                anime();            //文字の移動アニメーション
+                font_zoom();      //フォントサイズ変更
+                high_score();
+                score_board_set();  //スコアボードに入力できるようにする&3位以内なら更新
+                start=new Date();   //スタート時間の取得
+                timer();            //経過時間タイマー
+
+                //retry設定
+                $("#retry").on('click',function(){
+                    $("#score_board").animate(
+                            {"top" :"0px",        //y座標設定
+                            "left":"10000px"      //x座標設定
+                            },
+                            100                //アニメーション完了までの時間設定                            
+                    );
+                    set_num();          //配列生成
+                    create_element();   //要素を生成、セット
+                    anime();            //文字の移動アニメーション
+                    font_zoom();        //フォントサイズ変更
+                    high_score();       //ハイスコア
+                    timer_flag=0;       //timerフラグリセット
+                    start=new Date();   //スタート時間の取得
+                    timer();            //経過時間タイマー
+                    $("#form").show(20);//フォーム表示
+                })
+
+            })
+        </script>
+
+    </body>
+</html>
